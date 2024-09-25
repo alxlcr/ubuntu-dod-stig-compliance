@@ -1,0 +1,97 @@
+#cloud-config
+# See the autoinstall documentation at:
+# https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html
+autoinstall:
+  version: 1
+  oem:
+    install: auto
+
+  package_update: true
+  package_upgrade: true
+  timezone: "Etc/UTC"
+  updates: all
+  source:
+    id: ubuntu-server-minimal
+    search_drivers: false
+  refresh-installer:
+    update: yes
+
+  groups:
+    - docker
+  apt:
+    disable_components: []
+    fallback: offline-install
+    geoip: true
+    mirror-selection:
+      primary:
+      - country-mirror
+      - arches: &id001
+        - amd64
+        - i386
+        uri: http://archive.ubuntu.com/ubuntu/
+      - arches: &id002
+        - s390x
+        - arm64
+        - armhf
+        - powerpc
+        - ppc64el
+        - riscv64
+        uri: http://ports.ubuntu.com/ubuntu-ports
+    preserve_sources_list: false
+    security:
+    - arches: *id001
+      uri: http://security.ubuntu.com/ubuntu/
+    - arches: *id002
+      uri: http://ports.ubuntu.com/ubuntu-ports
+  codecs:
+    install: false
+  drivers:
+    install: false
+  identity:
+    hostname: tmp-lte-ubuntu01
+    ### "S3cr3tPassword!" ### change this 
+    password: $6$GEtauM9o6mdF6wY8$zVnT1xbkDeAJ2SS4ul5b14NS0RkoFnYDmnKDHJE8J9UtKFsyDeo.YvKCYLkkBgp581i/qRyLZmOdwa.wVk9s.0
+    realname: "Ubuntu Admin"
+    username: ubuntu_admin
+  kernel:
+    package: linux-generic
+  keyboard:
+    layout: us
+    toggle: null
+    variant: ''
+  locale: en_US.UTF-8
+  network:
+    ethernets:
+      ens18:
+        dhcp4: true
+    version: 2
+  ssh:
+    allow-pw: true
+    authorized-keys: []
+    install-server: true
+  packages:
+    - qemu-guest-agent
+    - ansible-core
+    - genisoimage
+    - python3-pip
+    - python3-jmespath
+    - docker.io
+    - zip
+    - nano
+    - htop
+    - ufw
+    - whois
+  late-commands:
+    - echo 'ansible ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/99_ansible
+    - sed -i 's/#Port 22/Port 50022/g' /target/etc/ssh/sshd_config
+    - mkdir -p /target/stig/
+    - wget -O /target/stig/U_CAN_Ubuntu_20-04_LTS_V1R11_STIG_Ansible.zip https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_CAN_Ubuntu_20-04_LTS_V1R11_STIG_Ansible.zip
+
+  user-data:
+   runcmd:
+    - usermod -a -G docker ubuntu_admin
+    - touch /var/log/ubuntu.log
+    - unzip /stig/U_CAN_Ubuntu_20-04_LTS_V1R11_STIG_Ansible.zip -d /stig/
+    - unzip /stig/ubuntu2004STIG-ansible.zip -d /stig/
+    - chmod a+x /stig/enforce.sh
+    - sed -i.bak "s/sshd/ssh/g" /stig/roles/ubuntu2004STIG/handlers/main.yml
