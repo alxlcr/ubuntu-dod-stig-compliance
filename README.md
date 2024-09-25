@@ -11,8 +11,11 @@ This is the user-data file needed to build a minimal Ubuntu 2404 server hardened
 5. Once completed ssh (on port 50022) into the new server and run:
 
   `cd /stig`
+  
   `sudo ./enforce.sh`
+  
   observe the output and restart when completed:
+  
   `sudo reboot`
 
 6. You now have minimal Ubuntu 2404 Server, with Ansible, Docker and some basic packages ready for use.
